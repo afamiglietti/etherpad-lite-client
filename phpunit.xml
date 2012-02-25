@@ -1,0 +1,7 @@
+<phpunit>
+  <testsuites>
+    <testsuite name="EtherpadLiteClient">
+      <directory>Test</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>

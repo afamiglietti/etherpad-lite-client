@@ -9,14 +9,15 @@ class EtherpadLiteClient {
   const CODE_INVALID_FUNCTION   = 3;
   const CODE_INVALID_API_KEY    = 4;
 
-  protected $apiKey = "";
-  protected $baseUrl = "http://localhost:9001/api";
+  protected $apiKey     = "";
+  protected $baseUrl    = "http://localhost:9001/api";
+  protected $httpClient = null;
   
-  public function __construct($apiKey, $baseUrl = null){
-    $this->apiKey  = $apiKey;
-    if (isset($baseUrl)){
-      $this->baseUrl = $baseUrl;
-    }
+  public function __construct(HttpClient $httpClient, $apiKey, $baseUrl){
+    $this->httpClient = $httpClient;
+    $this->apiKey     = $apiKey;
+    $this->baseUrl    = $baseUrl;
+
     if (!filter_var($this->baseUrl, FILTER_VALIDATE_URL)){
       throw new InvalidArgumentException("[{$this->baseUrl}] is not a valid URL");
     }
@@ -34,29 +35,12 @@ class EtherpadLiteClient {
     $arguments['apikey'] = $this->apiKey;
     $arguments = http_build_query($arguments);
     $url = $this->baseUrl."/".self::API_VERSION."/".$function;
+
     if ($method !== 'POST'){
       $url .=  "?".$arguments;
-    }
-    // use curl of it's available
-    if (function_exists('curl_init')){
-      $c = curl_init($url);
-      curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($c, CURLOPT_TIMEOUT, 20);
-      if ($method === 'POST'){
-        curl_setopt($c, CURLOPT_POST, true);
-        curl_setopt($c, CURLOPT_POSTFIELDS, $arguments);
-      }
-      $result = curl_exec($c);
-      curl_close($c);
-    // fallback to plain php
+      $result = $this->httpClient->get($url);
     } else {
-      $params = array('http' => array('method' => $method, 'ignore_errors' => true, 'header' => 'Content-Type:application/x-www-form-urlencoded'));
-      if ($method === 'POST'){
-        $params['http']['content'] = $arguments;
-      }
-      $context = stream_context_create($params);
-      $fp = fopen($url, 'rb', false, $context);
-      $result = $fp ? stream_get_contents($fp) : null;
+      $result = $this->httpClient->post($url, $arguments);
     }
     
     if(!$result){
