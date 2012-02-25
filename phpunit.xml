@@ -1,6 +1,6 @@
-<phpunit>
+<phpunit bootstrap="Test/Init.php">
   <testsuites>
-    <testsuite name="EtherpadLiteClient">
+    <testsuite name="Core">
       <directory>Test</directory>
     </testsuite>
   </testsuites>
