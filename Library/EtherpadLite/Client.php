@@ -9,9 +9,10 @@ class EtherpadLiteClient {
   const CODE_INVALID_FUNCTION   = 3;
   const CODE_INVALID_API_KEY    = 4;
 
-  protected $apiKey     = "";
-  protected $baseUrl    = "http://localhost:9001/api";
-  protected $httpClient = null;
+  protected $apiKey        = "";
+  protected $baseUrl       = "http://localhost:9001/api";
+  protected $httpClient    = null;
+  protected $lastRawResult = null;
   
   public function __construct(HttpClient $httpClient, $apiKey, $baseUrl){
     $this->httpClient = $httpClient;
@@ -51,7 +52,12 @@ class EtherpadLiteClient {
     if ($result === null){
       throw new UnexpectedValueException("JSON response could not be decoded");
     }
+    $this->lastRawResult = $result;
     return $this->handleResult($result);
+  }
+
+  public function getLastRawResult(){
+    return $this->lastRawResult;
   }
 
   protected function handleResult($result){
