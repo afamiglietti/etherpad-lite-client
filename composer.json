@@ -1,4 +1,6 @@
 {
+    "name": "etherpad-lite/etherpad-lite-php",
+    "description" : "etherpad-lite php library",
     "require-dev": {
         "phpunit/phpunit": "3.7.*"
     }
