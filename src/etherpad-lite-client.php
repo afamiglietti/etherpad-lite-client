@@ -15,8 +15,11 @@ class EtherpadLiteClient {
 
   protected $apiKey = "";
   protected $baseUrl = "http://localhost:9001/api";
-  
-  public function __construct($apiKey, $baseUrl = null){
+
+  public function __construct($apiKey, $baseUrl = null, $disableSsl = false){
+    //set $disableSsl to true to disable ssl for testing environments with self-signed keys
+    //DON'T USE THIS IN A PRODUCTION ENVIRONMENT, PLZ
+    $this->disableSsl = $disableSsl;
     if (strlen($apiKey) < 1){
       throw new InvalidArgumentException("[{$apiKey}] is not a valid API key");
     }
@@ -42,6 +45,7 @@ class EtherpadLiteClient {
     $arguments['apikey'] = $this->apiKey;
     $arguments = http_build_query($arguments, '', '&');
     $url = $this->baseUrl."/".self::API_VERSION."/".$function;
+
     if ($method !== 'POST'){
       $url .=  "?".$arguments;
     }
@@ -50,11 +54,19 @@ class EtherpadLiteClient {
       $c = curl_init($url);
       curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
       curl_setopt($c, CURLOPT_TIMEOUT, 20);
-      if ($method === 'POST'){
-        curl_setopt($c, CURLOPT_POST, true);
-        curl_setopt($c, CURLOPT_POSTFIELDS, $arguments);
+      if ($method === 'POST') {
+          curl_setopt($c, CURLOPT_POST, true);
+          curl_setopt($c, CURLOPT_POSTFIELDS, $arguments);
       }
+      if ($this->disableSsl) {
+          curl_setopt($c, CURLOPT_SSL_VERIFYPEER, false);
+          curl_setopt($c, CURLOPT_SSL_VERIFYHOST, false);
+      }
+
       $result = curl_exec($c);
+        if(!$result) {
+            $error = curl_error($c);
+        }
       curl_close($c);
     // fallback to plain php
     } else {
@@ -66,11 +78,11 @@ class EtherpadLiteClient {
       $fp = fopen($url, 'rb', false, $context);
       $result = $fp ? stream_get_contents($fp) : null;
     }
-    
+
     if(!$result){
-      throw new UnexpectedValueException("Empty or No Response from the server");
+      throw new UnexpectedValueException($error);
     }
-    
+
     $result = json_decode($result);
     if ($result === null){
       throw new UnexpectedValueException("JSON response could not be decoded");
@@ -562,4 +574,3 @@ class EtherpadLiteClient {
 
 
 }
-
