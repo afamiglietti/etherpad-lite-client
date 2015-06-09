@@ -14,7 +14,7 @@ class EtherpadLiteClient {
   const CODE_INVALID_API_KEY    = 4;
 
   protected $apiKey = "";
-  protected $baseUrl = "http://localhost:9001/api";
+  protected $baseUrl = "http://localhost:9001";
 
   public function __construct($apiKey, $baseUrl = null, $disableSsl = false){
     //set $disableSsl to true to disable ssl for testing environments with self-signed keys
@@ -33,19 +33,23 @@ class EtherpadLiteClient {
     }
   }
 
-  protected function get($function, array $arguments = array()){
-    return $this->call($function, $arguments, 'GET');
+  protected function get($function, array $arguments = array(), $endpoint='default'){
+    return $this->call($function, $arguments, 'GET', $endpoint);
   }
 
-  protected function post($function, array $arguments = array()){
-    return $this->call($function, $arguments, 'POST');
+  protected function post($function, array $arguments = array(), $endpoint='default'){
+    return $this->call($function, $arguments, 'POST', $endpoint);
   }
 
-  protected function call($function, array $arguments = array(), $method = 'GET'){
+  protected function call($function, array $arguments = array(), $method = 'GET', $endpoint = 'default'){
     $arguments['apikey'] = $this->apiKey;
     $arguments = http_build_query($arguments, '', '&');
-    $url = $this->baseUrl."/".self::API_VERSION."/".$function;
-
+    if($endpoint === 'default') {
+        $url = $this->baseUrl . "/api/" . self::API_VERSION . "/" . $function;
+    }
+    elseif($endpoint === '/pluginAPI/customStyles.styles.'){
+        $url = $this->baseUrl . $endpoint . $function;
+    }
     if ($method !== 'POST'){
       $url .=  "?".$arguments;
     }
@@ -570,6 +574,22 @@ class EtherpadLiteClient {
     $params['rev'] = $rev;
 
     return $this->post("restoreRevision", $params);
+  }
+
+  //create new custom style
+  public function customStyleNew($styleId, $css){
+      $params = array();
+      $params['styleId'] = $styleId;
+      $params['css'] = $css;
+      return $this->get("new", $params, '/pluginAPI/customStyles.styles.');
+  }
+
+  //set custom styles for a pad
+  public function customStyleSetStylesForPad ($padId, $styleIds = array()){
+      $params = array();
+      $params['padId'] = $padId;
+      $params['styleIds'] = $styleIds;
+      return $this->get("setStylesForPad", $params, '/pluginAPI/customStyles.styles.');
   }
 
 
